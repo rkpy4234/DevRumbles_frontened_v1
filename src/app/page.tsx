@@ -1,103 +1,207 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { jwtDecode } from "jwt-decode";
+import { FcGoogle } from "react-icons/fc";
+import { AiOutlineUserAdd, AiOutlineUnlock } from "react-icons/ai";
+import Link from "next/link";
+import { useEffect } from "react";
+import GoogleLoginButton from "./comp/GoogleButton";
+
+// Define a typed interface for the JWT payload
+interface MyJwtPayload {
+  exp?: number;
+  iat?: number;
+  iss?: string;
+  aud?: string | string[];
+  role?: string | string[];
+  "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"?:
+    | string
+    | string[];
+}
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("https://localhost:7006/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Login failed");
+      }
+
+      const data = await res.json();
+      const token = data.token;
+
+      // Store JWT
+      localStorage.setItem("token", token);
+
+      // Decode JWT
+      const decoded = jwtDecode<MyJwtPayload>(token);
+
+      let userRole: string | undefined;
+
+      // Check for standard `role` claim
+      if (decoded.role) {
+        userRole = Array.isArray(decoded.role) ? decoded.role[0] : decoded.role;
+      }
+      // Check ASP.NET Core role claim
+      else if (
+        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
+      ) {
+        const roleClaim =
+          decoded[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ];
+        userRole = Array.isArray(roleClaim) ? roleClaim[0] : roleClaim;
+      }
+
+      console.log("Decoded role:", userRole);
+
+      setMessage(" Login successful!");
+
+      // Role-based navigation
+      const normalizedRole = userRole?.toString().trim().toLowerCase();
+      if (normalizedRole === "admin") {
+        router.push("/admin/dashboard");
+      } else if (normalizedRole === "user") {
+        router.push("/user/dashboard");
+      } else {
+        setMessage("Wrog Credetntial");
+      }
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? ` ${err.message}` : " An unknown error occurred"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  //URL login prevent
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const decoded: MyJwtPayload = jwtDecode(token);
+      const role =
+        decoded.role ||
+        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
+      const normalizedRole = Array.isArray(role)
+        ? role[0].toString().trim().toLowerCase()
+        : role?.toString().trim().toLowerCase();
+
+      if (normalizedRole === "admin") {
+        router.push("/admin/dashboard");
+      } else if (normalizedRole === "user") {
+        router.push("/user/dashboard");
+      }
+    } catch (error) {
+      console.error("Invalid token", error);
+      localStorage.removeItem("token");
+    }
+  }, [router]);
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="w-full max-w-md p-10 space-y-8 bg-white/70 backdrop-blur-md rounded-xl shadow-lg">
+        <h1 className="text-3xl font-bold text-center text-blue-700">
+          Quick Junction
+        </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+        <form
+          className="space-y-6"
+          onSubmit={handleLogin}
+          aria-label="login form"
+        >
+          <div>
+            <label
+              htmlFor="email"
+              className="block mb-1 text-sm font-semibold text-blue-700"
+            >
+              Email address
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="you@example.com"
+              className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block mb-1 text-sm font-semibold text-blue-700"
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="*********"
+              className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 text-white rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-semibold transition"
           >
-            Read our docs
-          </a>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+
+        {message && (
+          <p
+            className={`text-center font-semibold ${
+              message.startsWith("✅") ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {message}
+          </p>
+        )}
+
+        <div className="flex items-center justify-center space-x-2 text-blue-600 font-semibold text-sm">
+          <span>Or sign in with</span>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <GoogleLoginButton />
+
+        <div className="flex flex-col sm:flex-row justify-between items-center text-blue-700 font-semibold text-sm mt-6 space-y-3 sm:space-y-0">
+          <Link href="/signup" className="flex items-center gap-1">
+            <AiOutlineUserAdd size={18} />
+            Sign Up
+          </Link>
+          <Link href="/forgetpassword" className="flex items-center gap-1">
+            <AiOutlineUnlock size={18} />
+            Forgot Password?
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
