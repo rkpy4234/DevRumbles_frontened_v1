@@ -55,37 +55,35 @@ export default function EventsPage() {
   if (loading) return <p className="text-center mt-20">Loading events...</p>;
 
   return (
-    <UserLayout>
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8 text-center">Upcoming Events</h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {events.map((ev) => (
-            <Card
-              key={ev.id}
-              className="hover:shadow-lg transition-shadow duration-300"
-            >
-              <CardHeader>
-                <CardTitle className="text-xl">{ev.title}</CardTitle>
-                <CardDescription className="text-sm text-gray-500">
-                  {formatDate(ev.eventDate)} &bull; {ev.location}
-                </CardDescription>
-              </CardHeader>
-              <div className="p-3 ">
-                {ev.image && (
-                  <img
-                    src={`https://localhost:7006/${ev.image}`}
-                    alt={ev.title}
-                    className="w-full object-cover rounded-md my-2"
-                  />
-                )}
-              </div>
-              <CardContent>
-                <p className="text-gray-700">{ev.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold mb-8 text-center">Upcoming Events</h1>
+      <div className="flex flex-col md:grid-cols-2 lg:grid-cols-3 pt-8 gap-4">
+        {events.map((ev) => (
+          <Card
+            key={ev.id}
+            className="hover:shadow-lg transition-shadow duration-300"
+          >
+            <CardHeader>
+              <CardTitle className="text-xl">{ev.title}</CardTitle>
+              <CardDescription className="text-sm text-gray-500">
+                {formatDate(ev.eventDate)} &bull; {ev.location}
+              </CardDescription>
+            </CardHeader>
+            <div className="p-3 ">
+              {ev.image && (
+                <img
+                  src={`https://localhost:7006/${ev.image}`}
+                  alt={ev.title}
+                  className="w-full object-cover rounded-md my-2"
+                />
+              )}
+            </div>
+            <CardContent>
+              <p className="text-gray-700">{ev.description}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-    </UserLayout>
+    </div>
   );
 }

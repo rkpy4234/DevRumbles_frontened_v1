@@ -2,8 +2,29 @@
 
 import React, { ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import UserGuard from "./UserGuard";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from "../../components/ui/navigation-menu";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  IconHome,
+  IconUsers,
+  IconMessageCircle,
+  IconCalendarEvent,
+  IconConfetti,
+  IconLogout,
+} from "@tabler/icons-react";
 
 interface UserLayoutProps {
   children: ReactNode;
@@ -11,121 +32,119 @@ interface UserLayoutProps {
 
 export default function UserLayout({ children }: UserLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    router.push("/"); // redirect to login page
+    router.push("/");
   };
+
+  const menuItems = [
+    { href: "/user/dashboard", icon: IconHome, label: "Home" },
+    { href: "/user/events", icon: IconCalendarEvent, label: "Events" },
+    { href: "/user/announcement", icon: IconConfetti, label: "Announcements" },
+    { href: "/user/messages", icon: IconMessageCircle, label: "Messages" },
+  ];
+
   return (
     <UserGuard>
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        {/* Header/Navigation */}
-        <header className="bg-white shadow-sm">
-          <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16 items-center">
-              <div className="flex-shrink-0 flex items-center">
-                <Link href="/" className="text-xl font-bold text-indigo-600">
-                  YourLogo
+      <TooltipProvider>
+        <div className="min-h-screen flex flex-col bg-gray-50">
+          {/* Header / Navigation */}
+          <header className="bg-white shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                {/* Logo */}
+                <Link href="/" className="text-xl font-extrabold text-blue-500">
+                  ConneX
                 </Link>
-              </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
-                  href="/user/dashboard"
-                  className="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Home
-                </Link>
-                <Link
-                  href="/user/Hello"
-                  className="border-transparent hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Contact
-                </Link>
-                <Link
-                  href="/user/announcement"
-                  className="border-transparent hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Announcement
-                </Link>
-                <Link
-                  href="/user/events"
-                  className="border-transparent hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Events
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-                >
-                  Logout
-                </button>
-              </div>
-              {/* Mobile menu button */}
-              <div className="-mr-2 flex items-center sm:hidden">
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-                  aria-controls="mobile-menu"
-                  aria-expanded="false"
-                >
-                  <span className="sr-only">Open main menu</span>
-                  {/* Hamburger icon */}
-                  <svg
-                    className="block h-6 w-6"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
+
+                {/* Desktop Navigation */}
+                <div className="hidden md:flex md:flex-1 md:justify-center">
+                  <NavigationMenu>
+                    <NavigationMenuList className="flex space-x-8">
+                      {menuItems.map(({ href, icon: Icon, label }) => (
+                        <NavigationMenuItem key={href}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <NavigationMenuLink asChild>
+                                <Link
+                                  href={href}
+                                  className={`inline-flex items-center px-3 py-2 ${
+                                    pathname === href
+                                      ? "text-blue-600"
+                                      : "text-gray-700 hover:text-blue-600"
+                                  }`}
+                                >
+                                  <Icon className="h-50 w-50" />
+                                  {label}
+                                </Link>
+                              </NavigationMenuLink>
+                            </TooltipTrigger>
+                            <TooltipContent>{label}</TooltipContent>
+                          </Tooltip>
+                        </NavigationMenuItem>
+                      ))}
+                    </NavigationMenuList>
+                  </NavigationMenu>
+                </div>
+
+                {/* Desktop Logout */}
+                <div className="hidden md:flex items-center">
+                  <Button
+                    onClick={handleLogout}
+                    variant="default"
+                    className="font-semibold"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
-                </button>
+                    <IconLogout className="mr-2" /> ESC
+                  </Button>
+                </div>
               </div>
             </div>
-          </nav>
 
-          {/* Mobile menu */}
-          <div className="sm:hidden" id="mobile-menu">
-            <div className="pt-2 pb-3 space-y-1">
-              <Link
-                href="/"
-                className="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-              >
-                Home
-              </Link>
-              <Link
-                href="/user/Hello"
-                className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-              >
-                Contact
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-              >
-                Logout
-              </button>
+            {/* Mobile Top Navigation */}
+            <div className="md:hidden border-t border-gray-200 bg-white flex justify-around py-2">
+              {menuItems.map(({ href, icon: Icon, label }) => (
+                <Tooltip key={href}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={href}
+                      className={`flex flex-col items-center ${
+                        pathname === href
+                          ? "text-blue-600"
+                          : "text-gray-700 hover:text-blue-600"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" /> {/* Bigger icons */}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>{label}</TooltipContent>
+                </Tooltip>
+              ))}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleLogout}
+                    className="flex flex-col items-center text-gray-700 hover:text-red-600"
+                  >
+                    <IconLogout className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Logout</TooltipContent>
+              </Tooltip>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Main Content */}
-        <main className="flex-grow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
-            {children}
-          </div>
-        </main>
+          {/* Main Content */}
+          <main className="flex-grow">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {children}
+            </div>
+          </main>
 
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex flex-col md:flex-row justify-between items-center">
+          {/* Footer for Desktop */}
+          <footer className="hidden md:block bg-white border-t border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
               <div className="flex space-x-6">
                 <Link href="/" className="text-gray-400 hover:text-gray-500">
                   Home
@@ -137,14 +156,14 @@ export default function UserLayout({ children }: UserLayoutProps) {
                   Contact
                 </Link>
               </div>
-              <p className="mt-4 md:mt-0 text-sm text-gray-500">
+              <p className="text-sm text-gray-500">
                 &copy; {new Date().getFullYear()} Your Company. All rights
                 reserved.
               </p>
             </div>
-          </div>
-        </footer>
-      </div>
+          </footer>
+        </div>
+      </TooltipProvider>
     </UserGuard>
   );
 }
